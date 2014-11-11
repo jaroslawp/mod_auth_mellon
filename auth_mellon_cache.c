@@ -521,6 +521,7 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
     const char *varname;
     const char *varname_prefix;
     const char *value;
+    const char *current_value;
     int *count;
     int status;
 
@@ -543,6 +544,7 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
             }
         }
     }
+
 
     /* Allocate a set of counters for duplicate variables in the list. */
     counters = apr_hash_make(r->pool);
@@ -596,13 +598,28 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
                           value);
         }
 
+        if (d->merge_env_vars == am_merge_env_vars_on) {
+
+        /* Merge the multivalue variable */
+
+        if ((current_value=(char *)apr_table_get(r->subprocess_env,apr_pstrcat(r->pool, varname_prefix, varname, NULL))) != NULL &&
+            apr_strnatcasecmp(current_value,value)) {
+            apr_table_set(r->subprocess_env,
+                          apr_pstrcat(r->pool, varname_prefix, varname, NULL),
+                          apr_pstrcat(r->pool, value, ";" , current_value, NULL));
+           ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, "JARO: cur: %s , new: %s",current_value,value);
+        }
+
+
+        } else {
+
         /* Add the variable with a suffix indicating how many times it has
          * been added before.
          */
         apr_table_set(r->subprocess_env,
                       apr_psprintf(r->pool, "%s%s_%d", varname_prefix, varname, *count),
                       value);
-
+        }
         /* Increase the count. */
         ++(*count);
     }
