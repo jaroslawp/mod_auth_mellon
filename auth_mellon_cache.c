@@ -521,7 +521,7 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
     const char *varname;
     const char *varname_prefix;
     const char *value;
-    const char *current_value;
+    const char *curr_value;
     int *count;
     int status;
 
@@ -544,7 +544,6 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
             }
         }
     }
-
 
     /* Allocate a set of counters for duplicate variables in the list. */
     counters = apr_hash_make(r->pool);
@@ -598,28 +597,34 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
                           value);
         }
 
-        if (d->merge_env_vars == am_merge_env_vars_on) {
 
-        /* Merge the multivalue variable */
+        if (d->merge_env_vars) {
 
-        if ((current_value=(char *)apr_table_get(r->subprocess_env,apr_pstrcat(r->pool, varname_prefix, varname, NULL))) != NULL &&
-            apr_strnatcasecmp(current_value,value)) {
-            apr_table_set(r->subprocess_env,
-                          apr_pstrcat(r->pool, varname_prefix, varname, NULL),
-                          apr_pstrcat(r->pool, value, ";" , current_value, NULL));
-           ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, "JARO: cur: %s , new: %s",current_value,value);
-        }
-
+            /*
+             * Merge multiple values, separating with ";" 
+             * this makes auth_mellon work same way mod_shib is:
+             * https://wiki.shibboleth.net/confluence/display/SHIB2/NativeSPAttributeAccess
+             */
+            curr_value=(char *)apr_table_get(r->subprocess_env,
+                                             apr_pstrcat(r->pool, varname_prefix, varname, NULL)); 
+            /* avoid duplicated values - from parent req. ? */
+            if (apr_strnatcmp(curr_value,value)!= 0) {
+                apr_table_set(r->subprocess_env,
+                              apr_pstrcat(r->pool, varname_prefix, varname, NULL),
+                              apr_pstrcat(r->pool, value, ";" , curr_value, NULL));
+            }
 
         } else {
 
-        /* Add the variable with a suffix indicating how many times it has
-         * been added before.
-         */
-        apr_table_set(r->subprocess_env,
-                      apr_psprintf(r->pool, "%s%s_%d", varname_prefix, varname, *count),
-                      value);
+            /* Add the variable with a suffix indicating how many times it has
+             * been added before.
+             */
+            apr_table_set(r->subprocess_env,
+                          apr_psprintf(r->pool, "%s%s_%d", varname_prefix, varname, *count),
+                          value);
+
         }
+
         /* Increase the count. */
         ++(*count);
     }

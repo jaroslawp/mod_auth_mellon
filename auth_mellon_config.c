@@ -73,7 +73,8 @@ static const int post_count = 100;
 /* whether to merge env. vars or not
  * the MellonMergeEnvVars configuration directive if you change this.
  */
-static const int default_merge_env_vars = am_merge_env_vars_off;
+static const int default_merge_env_vars = 0;
+
 
 /* This function handles configuration directives which set a 
  * multivalued string slot in the module configuration (the destination
@@ -491,35 +492,6 @@ static const char *am_set_endpoint_path(cmd_parms *cmd,
     return NULL;
 }
 
-/* This function handles the MellonMergeEnvVars configuration directive.
- * This directive can be set to "on" or "off".
- *
- * Parameters:
- *  cmd_parms *cmd       The command structure for this configuration
- *                       directive.
- *  void *struct_ptr     Pointer to the current directory configuration.
- *  const char *arg      The string argument following this configuration
- *                       directive in the configuraion file.
- *
- * Returns:
- *  NULL on success or an error string if the argument is wrong.
- */
-static const char *am_set_merge_env_vars_slot(cmd_parms *cmd,
-                                       void *struct_ptr,
-                                       const char *arg)
-{
-    am_dir_cfg_rec *d = (am_dir_cfg_rec *)struct_ptr;
-
-    if(!strcasecmp(arg, "on")) {
-        d->merge_env_vars = am_merge_env_vars_on;
-    } else if(!strcasecmp(arg, "off")) {
-        d->decoder = am_merge_env_vars_off;
-    } else {
-        return "MellonMergeEnvVars must be 'on' or 'off'";
-    }
-
-    return NULL;
-}
 
 /* This function handles the MellonSetEnv configuration directive.
  * This directive allows the user to change the name of attributes.
@@ -948,14 +920,6 @@ const command_rec auth_mellon_commands[] = {
     /* Per-location configuration directives. */
 
     AP_INIT_TAKE1(
-         "MellonMergeEnvVars",
-         am_set_merge_env_vars_slot,
-         NULL,
-         OR_AUTHCFG,
-         "Whether to merge environement variables values or not."
-         " Default is 'off'"
-         ),
-    AP_INIT_TAKE1(
         "MellonEnable",
         am_set_enable_slot,
         NULL,
@@ -1025,7 +989,7 @@ const command_rec auth_mellon_commands[] = {
         (void *)APR_OFFSETOF(am_dir_cfg_rec, idpattr),
         OR_AUTHCFG,
         "Attribute we set to the IdP ProviderId."
-        ),    
+        ),
     AP_INIT_TAKE2(
         "MellonSetEnv",
         am_set_setenv_slot,
@@ -1260,6 +1224,13 @@ const command_rec auth_mellon_commands[] = {
         OR_AUTHCFG,
         "Whether we should replay POST requests that trigger authentication. Default is off."
         ),
+    AP_INIT_FLAG(
+        "MellonMergeEnvVars",
+        ap_set_flag_slot,
+        (void *)APR_OFFSETOF(am_dir_cfg_rec, merge_env_vars),
+        OR_AUTHCFG,
+        "Whether to merge environement variables multi-values or not. Default is off."
+        ),
     {NULL}
 };
 
@@ -1435,6 +1406,10 @@ void *auth_mellon_dir_merge(apr_pool_t *p, void *base, void *add)
     new_cfg->secure = (add_cfg->secure != default_secure_cookie ?
                         add_cfg->secure :
                         base_cfg->secure);
+
+    new_cfg->merge_env_vars = (add_cfg->merge_env_vars != default_merge_env_vars ?
+                               add_cfg->merge_env_vars :
+                               base_cfg->merge_env_vars);
 
     new_cfg->cookie_domain = (add_cfg->cookie_domain != NULL ?
                         add_cfg->cookie_domain :

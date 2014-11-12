@@ -133,11 +133,6 @@ typedef enum {
 } am_decoder_t;
 
 typedef enum {
-    am_merge_env_vars_on,
-    am_merge_env_vars_off
-} am_merge_env_vars_t;
-
-typedef enum {
     AM_COND_FLAG_NULL = 0x000, /* No flags */
     AM_COND_FLAG_OR   = 0x001, /* Or with  next condition */
     AM_COND_FLAG_NOT  = 0x002, /* Negate this condition */
@@ -180,6 +175,7 @@ typedef struct am_dir_cfg_rec {
 
     const char *varname;
     int secure;
+    int merge_env_vars;
     const char *cookie_domain;
     const char *cookie_path;
     apr_array_header_t *cond;
@@ -188,7 +184,6 @@ typedef struct am_dir_cfg_rec {
     const char *idpattr;
     int dump_session;
     int dump_saml_response;
-    am_merge_env_vars_t merge_env_vars;
 
     /* The "root directory" of our SAML2 endpoints. This path is relative
      * to the root of the web server.
