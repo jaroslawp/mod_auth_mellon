@@ -232,7 +232,7 @@ MellonPostCount 100
         # Default. None set.
         MellonSetEnvNoPrefix "DISPLAY_NAME" "displayName"
 
-	# MellonMergeEnvVars merges multiple values of environement variables
+        # MellonMergeEnvVars merges multiple values of environement variables
         # set using MellonSetEnv into single variable:
         # ie: MYENV_VAR => val1;val2;val3 instead of default behaviour of:
         #     MYENV_VAR_0 => val1, MYENV_VAR_1 => val2 ... etc.
