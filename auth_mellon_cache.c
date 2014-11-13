@@ -598,7 +598,7 @@ void am_cache_env_populate(request_rec *r, am_cache_entry_t *t)
         }
 
 
-        if (d->merge_env_vars) {
+        if (d->merge_env_vars == 1) {
 
             /*
              * Merge multiple values, separating with ";" 

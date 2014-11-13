@@ -73,7 +73,7 @@ static const int post_count = 100;
 /* whether to merge env. vars or not
  * the MellonMergeEnvVars configuration directive if you change this.
  */
-static const int default_merge_env_vars = 0;
+static const int default_merge_env_vars = -1;
 
 
 /* This function handles configuration directives which set a 
